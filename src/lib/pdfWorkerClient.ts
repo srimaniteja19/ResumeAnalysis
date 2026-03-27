@@ -16,7 +16,13 @@ function ensureWorker(): InstanceType<typeof PdfExtractWorker> {
     worker = new PdfExtractWorker()
     worker.onmessage = (
       e: MessageEvent<
-        | { id: number; ok: true; text: string; pageCount: number }
+        | {
+            id: number
+            ok: true
+            text: string
+            pageCount: number
+            pageTexts: string[]
+          }
         | { id: number; ok: false; message: string }
       >
     ) => {
@@ -24,7 +30,12 @@ function ensureWorker(): InstanceType<typeof PdfExtractWorker> {
       const p = pending.get(data.id)
       if (!p) return
       pending.delete(data.id)
-      if (data.ok) p.resolve({ text: data.text, pageCount: data.pageCount })
+      if (data.ok)
+        p.resolve({
+          text: data.text,
+          pageCount: data.pageCount,
+          pageTexts: data.pageTexts,
+        })
       else p.reject(new Error(data.message))
     }
   }

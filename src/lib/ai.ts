@@ -1,4 +1,5 @@
-import type { AnalysisResult, Provider } from '../types'
+import type { AnalysisResult, AnalysisTone, Provider } from '../types'
+import { withAnalysisTone } from './analysisTone'
 import {
   mergeDualAnalysisRaw,
   parseAnalysisFromRaw,
@@ -177,14 +178,21 @@ async function fetchAnalysisSinglePass(
   apiKey: string,
   model: string,
   resumeText: string,
-  jobDescription: string
+  jobDescription: string,
+  systemFull: string,
+  resumeExtraNote?: string
 ): Promise<string> {
-  const userPrompt = buildUserPrompt(resumeText, jobDescription, 'full')
+  const userPrompt = buildUserPrompt(
+    resumeText,
+    jobDescription,
+    'full',
+    resumeExtraNote
+  )
   if (provider === 'claude') {
-    return callClaude(apiKey, model, userPrompt, SYSTEM_PROMPT, ANALYZE_MAX_CLAUDE)
+    return callClaude(apiKey, model, userPrompt, systemFull, ANALYZE_MAX_CLAUDE)
   }
   if (provider === 'openai') {
-    return callOpenAI(apiKey, model, userPrompt, SYSTEM_PROMPT, {
+    return callOpenAI(apiKey, model, userPrompt, systemFull, {
       responseJson: true,
       maxTokens: ANALYZE_MAX_OPENAI,
     })
@@ -193,7 +201,7 @@ async function fetchAnalysisSinglePass(
     apiKey,
     model,
     userPrompt,
-    SYSTEM_PROMPT,
+    systemFull,
     true,
     ANALYZE_MAX_GEMINI
   )
@@ -203,19 +211,20 @@ async function requestAnalysisCore(
   provider: Provider,
   apiKey: string,
   model: string,
-  userPrompt: string
+  userPrompt: string,
+  systemCore: string
 ): Promise<string> {
   if (provider === 'claude') {
     return callClaude(
       apiKey,
       model,
       userPrompt,
-      SYSTEM_PROMPT_ANALYSIS_CORE,
+      systemCore,
       ANALYZE_MAX_CLAUDE_CORE
     )
   }
   if (provider === 'openai') {
-    return callOpenAI(apiKey, model, userPrompt, SYSTEM_PROMPT_ANALYSIS_CORE, {
+    return callOpenAI(apiKey, model, userPrompt, systemCore, {
       responseJson: true,
       maxTokens: ANALYZE_MAX_OPENAI_CORE,
     })
@@ -224,7 +233,7 @@ async function requestAnalysisCore(
     apiKey,
     model,
     userPrompt,
-    SYSTEM_PROMPT_ANALYSIS_CORE,
+    systemCore,
     true,
     ANALYZE_MAX_GEMINI_CORE
   )
@@ -234,34 +243,29 @@ async function requestAnalysisRewrites(
   provider: Provider,
   apiKey: string,
   model: string,
-  userPrompt: string
+  userPrompt: string,
+  systemRewrites: string
 ): Promise<string> {
   if (provider === 'claude') {
     return callClaude(
       apiKey,
       model,
       userPrompt,
-      SYSTEM_PROMPT_ANALYSIS_REWRITES,
+      systemRewrites,
       ANALYZE_MAX_CLAUDE_REWRITE
     )
   }
   if (provider === 'openai') {
-    return callOpenAI(
-      apiKey,
-      model,
-      userPrompt,
-      SYSTEM_PROMPT_ANALYSIS_REWRITES,
-      {
-        responseJson: true,
-        maxTokens: ANALYZE_MAX_OPENAI_REWRITE,
-      }
-    )
+    return callOpenAI(apiKey, model, userPrompt, systemRewrites, {
+      responseJson: true,
+      maxTokens: ANALYZE_MAX_OPENAI_REWRITE,
+    })
   }
   return callGemini(
     apiKey,
     model,
     userPrompt,
-    SYSTEM_PROMPT_ANALYSIS_REWRITES,
+    systemRewrites,
     true,
     ANALYZE_MAX_GEMINI_REWRITE
   )
@@ -271,28 +275,46 @@ export async function fetchAnalysisRaw(
   provider: Provider,
   apiKey: string,
   model: string,
-  resumeText: string,
-  jobDescription: string
+  resumeForModel: string,
+  jobDescription: string,
+  tone: AnalysisTone,
+  resumeExtraNote?: string
 ): Promise<string> {
   if (!apiKey.trim()) throw new Error('Please enter your API key.')
+
+  const systemFull = withAnalysisTone(SYSTEM_PROMPT, tone)
+  const systemCore = withAnalysisTone(SYSTEM_PROMPT_ANALYSIS_CORE, tone)
+  const systemRew = withAnalysisTone(SYSTEM_PROMPT_ANALYSIS_REWRITES, tone)
 
   if (!USE_DUAL_PASS_ANALYSIS) {
     return fetchAnalysisSinglePass(
       provider,
       apiKey,
       model,
-      resumeText,
-      jobDescription
+      resumeForModel,
+      jobDescription,
+      systemFull,
+      resumeExtraNote
     )
   }
 
-  const uCore = buildUserPrompt(resumeText, jobDescription, 'core')
-  const uRew = buildUserPrompt(resumeText, jobDescription, 'rewrite')
+  const uCore = buildUserPrompt(
+    resumeForModel,
+    jobDescription,
+    'core',
+    resumeExtraNote
+  )
+  const uRew = buildUserPrompt(
+    resumeForModel,
+    jobDescription,
+    'rewrite',
+    resumeExtraNote
+  )
 
   try {
     const [coreRaw, rewriteRaw] = await Promise.all([
-      requestAnalysisCore(provider, apiKey, model, uCore),
-      requestAnalysisRewrites(provider, apiKey, model, uRew),
+      requestAnalysisCore(provider, apiKey, model, uCore, systemCore),
+      requestAnalysisRewrites(provider, apiKey, model, uRew, systemRew),
     ])
     return mergeDualAnalysisRaw(coreRaw, rewriteRaw)
   } catch (err) {
@@ -304,8 +326,10 @@ export async function fetchAnalysisRaw(
       provider,
       apiKey,
       model,
-      resumeText,
-      jobDescription
+      resumeForModel,
+      jobDescription,
+      systemFull,
+      resumeExtraNote
     )
   }
 }
@@ -315,14 +339,18 @@ export async function analyzeResume(
   apiKey: string,
   model: string,
   resumeText: string,
-  jobDescription: string
+  jobDescription: string,
+  tone: AnalysisTone = 'strict',
+  resumeExtraNote?: string
 ): Promise<AnalysisResult> {
   const raw = await fetchAnalysisRaw(
     provider,
     apiKey,
     model,
     resumeText,
-    jobDescription
+    jobDescription,
+    tone,
+    resumeExtraNote
   )
   try {
     return parseAnalysisFromRaw(raw)

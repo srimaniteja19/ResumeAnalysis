@@ -10,6 +10,8 @@ import { Header } from './components/layout/Header'
 import { ProviderBar } from './components/layout/ProviderBar'
 import { ResumeUpload } from './components/input/ResumeUpload'
 import { JobDescriptionInput } from './components/input/JobDescriptionInput'
+import { AnalysisOptionsBar } from './components/analysis/AnalysisOptionsBar'
+import { SessionHistoryPanel } from './components/analysis/SessionHistoryPanel'
 
 const AnalysisResultsPanel = lazy(async () => {
   const m = await import('./components/results/AnalysisResultsPanel')
@@ -24,6 +26,8 @@ import { Button } from './components/ui/button'
 import { useAppStore } from './store/useAppStore'
 import { fetchAnalysisRaw } from './lib/ai'
 import { parseAnalysisFromRawAsync } from './lib/analysisParseAsync'
+import { buildResumeTextForModel } from './lib/resumeScope'
+import { saveHistoryRecord } from './lib/sessionHistoryDb'
 
 const LOADING_STEPS = [
   'Scanning résumé DNA strands…',
@@ -43,6 +47,11 @@ export default function App() {
     apiKey,
     model,
     resumeText,
+    resumePageTexts,
+    resumePageCount,
+    resumeFileName,
+    resumePageFocus,
+    analysisTone,
     jobDescription,
     isAnalyzing,
     loadingStep,
@@ -58,6 +67,11 @@ export default function App() {
       apiKey: s.apiKey,
       model: s.model,
       resumeText: s.resumeText,
+      resumePageTexts: s.resumePageTexts,
+      resumePageCount: s.resumePageCount,
+      resumeFileName: s.resumeFileName,
+      resumePageFocus: s.resumePageFocus,
+      analysisTone: s.analysisTone,
       jobDescription: s.jobDescription,
       isAnalyzing: s.isAnalyzing,
       loadingStep: s.loadingStep,
@@ -86,12 +100,20 @@ export default function App() {
 
     let raw = ''
     try {
+      const { modelText, resumeExtraNote } = buildResumeTextForModel(
+        resumeText,
+        resumePageTexts,
+        resumePageCount,
+        resumePageFocus
+      )
       raw = await fetchAnalysisRaw(
         provider,
         apiKey,
         model,
-        resumeText,
-        jobDescription
+        modelText,
+        jobDescription,
+        analysisTone,
+        resumeExtraNote
       )
       clearInterval(interval)
       setIsAnalyzing(false)
@@ -99,6 +121,26 @@ export default function App() {
       const result = await parseAnalysisFromRawAsync(raw)
       startTransition(() => {
         setAnalysisResult(result)
+      })
+      void saveHistoryRecord({
+        id: crypto.randomUUID(),
+        createdAt: Date.now(),
+        jobDescription,
+        resumeFileName,
+        resumePageCount,
+        resumeText,
+        resumePageTexts,
+        analysisResult: result,
+        appliedSuggestionIndexes: [],
+        analysisTone,
+        resumePageFocus: {
+          emphasizeFirstPage: resumePageFocus.emphasizeFirstPage,
+          ignoredPages: [...resumePageFocus.ignoredPages],
+        },
+        provider,
+        model,
+      }).then(() => {
+        window.dispatchEvent(new Event('roleweaver-history-updated'))
       })
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     } catch (err) {
@@ -156,6 +198,14 @@ export default function App() {
         </div>
         <Header />
         <ProviderBar />
+        <div className="mb-5 grid gap-5 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <AnalysisOptionsBar />
+          </div>
+          <div className="lg:col-span-1">
+            <SessionHistoryPanel />
+          </div>
+        </div>
 
         <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
           <ResumeUpload />

@@ -129,7 +129,8 @@ export type UserPromptVariant = 'full' | 'core' | 'rewrite'
 export function buildUserPrompt(
   resumeText: string,
   jobDescription: string,
-  variant: UserPromptVariant = 'full'
+  variant: UserPromptVariant = 'full',
+  resumeExtraNote?: string
 ): string {
   const resumeTrunc =
     resumeText.length > MAX_RESUME_CHARS
@@ -144,12 +145,14 @@ export function buildUserPrompt(
     resumeText.length > MAX_RESUME_CHARS
       ? '\n\n[Analysis note: resume text was truncated from the upload—prioritize the content above.]'
       : ''
+  const resumeScope =
+    resumeExtraNote?.trim() ? `\n\n${resumeExtraNote.trim()}` : ''
   const jdNote =
     jobDescription.length > MAX_JD_CHARS
       ? '\n\n[Analysis note: job description was truncated—prioritize the content above.]'
       : ''
 
-  const base = `RESUME:\n${resumeTrunc}${resumeNote}\n\n---\n\nJOB DESCRIPTION:\n${jdTrunc}${jdNote}\n\n---\n\n`
+  const base = `RESUME:\n${resumeTrunc}${resumeNote}${resumeScope}\n\n---\n\nJOB DESCRIPTION:\n${jdTrunc}${jdNote}\n\n---\n\n`
 
   if (variant === 'core') {
     return `${base}RESPONSE (CORE PASS):\n- JSON only. Do NOT include "suggestedReplacements" or "projectedScores".\n- Non-empty "sections" for any normal resume; trim keywords/weakVerbs if long — never drop sections.`

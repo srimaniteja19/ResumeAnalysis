@@ -3,6 +3,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist'
 export interface PDFResult {
   text: string
   pageCount: number
+  /** Normalized text per page; `pageTexts[i]` is page `i + 1`. Length ≤ pages read. */
+  pageTexts: string[]
 }
 
 /** Beyond this, text is rarely useful for a résumé; avoids huge PDF slowdowns. */

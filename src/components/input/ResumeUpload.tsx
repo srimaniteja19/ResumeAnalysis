@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { ResumePageFocusControls } from '@/components/input/ResumePageFocusControls'
 import { BlobAlienMascot } from '@/components/illustrations/SciFiHeroArt'
 import { useAppStore } from '@/store/useAppStore'
 import { extractTextFromPDF } from '@/lib/pdf'
@@ -19,8 +20,8 @@ export function ResumeUpload() {
       setMessage('')
       setStatus('loading')
       try {
-        const { text, pageCount } = await extractTextFromPDF(file)
-        setResumeFile(file.name, pageCount, text)
+        const { text, pageCount, pageTexts } = await extractTextFromPDF(file)
+        setResumeFile(file.name, pageCount, text, pageTexts)
         setStatus('loaded')
       } catch (e) {
         setStatus('error')
@@ -61,7 +62,7 @@ export function ResumeUpload() {
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
         className={cn(
-          'flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-lg border-[3px] border-dashed border-border px-4 py-8 text-center transition-colors',
+          'relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-lg border-[3px] border-dashed border-border px-4 py-8 text-center transition-colors',
           status === 'loading' && 'pointer-events-none opacity-70',
             status === 'error'
             ? 'border-danger/40 bg-danger/5'
@@ -111,6 +112,7 @@ export function ResumeUpload() {
       {status === 'error' && message && (
         <p className="mt-2 font-mono text-xs text-danger">⚠ {message}</p>
       )}
+      <ResumePageFocusControls />
     </div>
   )
 }

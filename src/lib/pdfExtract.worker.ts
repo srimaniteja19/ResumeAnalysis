@@ -51,12 +51,14 @@ self.onmessage = async (e: MessageEvent<unknown>) => {
     const totalPages = pdf.numPages
     const toRead = Math.min(totalPages, MAX_PDF_PAGES_EXTRACT)
     const parts = await extractAllPagesText(pdf, toRead)
-    const text = normalizeResumeTextForAnalysis(parts.join('\n\n'))
+    const pageTexts = parts.map((p) => normalizeResumeTextForAnalysis(p))
+    const text = normalizeResumeTextForAnalysis(pageTexts.join('\n\n'))
     postMessage({
       id,
       ok: true as const,
       text,
       pageCount: totalPages,
+      pageTexts,
     })
   } catch (err) {
     postMessage({

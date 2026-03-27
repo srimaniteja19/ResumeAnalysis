@@ -1,5 +1,15 @@
 export type Provider = 'claude' | 'openai' | 'gemini'
 
+/** LLM instruction bias: conservative vs bolder (still no invented facts). */
+export type AnalysisTone = 'strict' | 'creative'
+
+/** When PDF yields per-page text, control what is sent to the model. */
+export interface ResumePageFocusSettings {
+  emphasizeFirstPage: boolean
+  /** 1-based page indices excluded from the extract sent for analysis. */
+  ignoredPages: number[]
+}
+
 export interface ProviderConfig {
   label: string
   placeholder: string
@@ -74,14 +84,30 @@ export interface AppState {
   setModel: (m: string) => void
   setRememberApiKey: (remember: boolean) => void
 
+  analysisTone: AnalysisTone
+  setAnalysisTone: (t: AnalysisTone) => void
+
   // Inputs
   resumeText: string
   resumeFileName: string
   resumePageCount: number
+  /** Normalized text per page (index 0 = page 1) when Source is PDF; empty if unknown. */
+  resumePageTexts: string[]
   jobDescription: string
+  resumePageFocus: ResumePageFocusSettings
   setResumeText: (t: string) => void
-  setResumeFile: (name: string, pages: number, text: string) => void
+  setResumeFile: (
+    name: string,
+    pages: number,
+    text: string,
+    pageTexts?: string[]
+  ) => void
   setJobDescription: (jd: string) => void
+  setResumePageFocus: (f: ResumePageFocusSettings) => void
+  setEmphasizeFirstResumePage: (v: boolean) => void
+  toggleIgnoredResumePage: (page1Based: number) => void
+
+  restoreSessionSnapshot: (snap: SessionSnapshot) => void
 
   // Analysis
   isAnalyzing: boolean
@@ -96,4 +122,19 @@ export interface AppState {
   /** Indexes into suggestedReplacements the user marked as applied. */
   appliedSuggestionIndexes: number[]
   toggleAppliedSuggestion: (index: number) => void
+}
+
+/** Restores inputs + last report (local session / history). */
+export interface SessionSnapshot {
+  jobDescription: string
+  resumeFileName: string
+  resumePageCount: number
+  resumeText: string
+  resumePageTexts: string[]
+  analysisResult: AnalysisResult
+  appliedSuggestionIndexes: number[]
+  analysisTone: AnalysisTone
+  resumePageFocus: ResumePageFocusSettings
+  provider: Provider
+  model: string
 }

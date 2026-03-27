@@ -27,8 +27,9 @@ async function extractTextFromBufferMain(
   const totalPages = pdf.numPages
   const toRead = Math.min(totalPages, MAX_PDF_PAGES_EXTRACT)
   const parts = await extractAllPagesText(pdf, toRead)
-  const text = normalizeResumeTextForAnalysis(parts.join('\n\n'))
-  return { text, pageCount: totalPages }
+  const pageTexts = parts.map((p) => normalizeResumeTextForAnalysis(p))
+  const text = normalizeResumeTextForAnalysis(pageTexts.join('\n\n'))
+  return { text, pageCount: totalPages, pageTexts }
 }
 
 export async function extractTextFromPDF(file: File): Promise<PDFResult> {

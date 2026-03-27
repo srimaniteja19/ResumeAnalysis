@@ -1,9 +1,19 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { DEFAULT_MODEL_BY_PROVIDER } from '@/lib/providerModels'
-import type { AppState, Provider } from '../types'
+import type {
+  AnalysisTone,
+  AppState,
+  Provider,
+  ResumePageFocusSettings,
+} from '../types'
 
 const STORAGE_KEY = 'roleweaver-settings-v1'
+
+const defaultPageFocus = (): ResumePageFocusSettings => ({
+  emphasizeFirstPage: false,
+  ignoredPages: [],
+})
 
 type PersistedFields = Pick<
   AppState,
@@ -37,14 +47,71 @@ export const useAppStore = create<AppState>()(
       setApiKey: (apiKey) => set({ apiKey }),
       setModel: (model) => set({ model }),
 
+      analysisTone: 'strict' as AnalysisTone,
+      setAnalysisTone: (analysisTone) => set({ analysisTone }),
+
       resumeText: '',
       resumeFileName: '',
       resumePageCount: 0,
+      resumePageTexts: [] as string[],
       jobDescription: '',
-      setResumeText: (resumeText) => set({ resumeText }),
-      setResumeFile: (resumeFileName, resumePageCount, resumeText) =>
-        set({ resumeFileName, resumePageCount, resumeText }),
+      resumePageFocus: defaultPageFocus(),
+
+      setResumeText: (resumeText) =>
+        set({
+          resumeText,
+          resumePageTexts: [],
+          resumePageCount: 0,
+          resumeFileName: '',
+          resumePageFocus: defaultPageFocus(),
+        }),
+
+      setResumeFile: (resumeFileName, resumePageCount, resumeText, pageTexts) =>
+        set({
+          resumeFileName,
+          resumePageCount,
+          resumeText,
+          resumePageTexts: pageTexts ?? [],
+          resumePageFocus: defaultPageFocus(),
+        }),
+
       setJobDescription: (jobDescription) => set({ jobDescription }),
+
+      setResumePageFocus: (resumePageFocus) => set({ resumePageFocus }),
+
+      setEmphasizeFirstResumePage: (emphasizeFirstPage) =>
+        set((s) => ({
+          resumePageFocus: { ...s.resumePageFocus, emphasizeFirstPage },
+        })),
+
+      toggleIgnoredResumePage: (page1Based) =>
+        set((s) => {
+          const cur = s.resumePageFocus.ignoredPages
+          const has = cur.includes(page1Based)
+          const ignoredPages = has
+            ? cur.filter((p) => p !== page1Based)
+            : [...cur, page1Based].sort((a, b) => a - b)
+          return { resumePageFocus: { ...s.resumePageFocus, ignoredPages } }
+        }),
+
+      restoreSessionSnapshot: (snap) =>
+        set({
+          jobDescription: snap.jobDescription,
+          resumeFileName: snap.resumeFileName,
+          resumePageCount: snap.resumePageCount,
+          resumeText: snap.resumeText,
+          resumePageTexts: snap.resumePageTexts,
+          analysisResult: snap.analysisResult,
+          appliedSuggestionIndexes: [...snap.appliedSuggestionIndexes],
+          analysisTone: snap.analysisTone,
+          resumePageFocus: {
+            emphasizeFirstPage: snap.resumePageFocus.emphasizeFirstPage,
+            ignoredPages: [...snap.resumePageFocus.ignoredPages],
+          },
+          provider: snap.provider,
+          model: snap.model,
+          error: null,
+        }),
 
       isAnalyzing: false,
       loadingStep: '',
@@ -81,7 +148,6 @@ export const useAppStore = create<AppState>()(
           model: state.model,
         }
       },
-      /** Only rehydrate provider credentials; never persist resume/JD/analysis from disk. */
       merge: (persisted, current) => {
         const p = persisted as Partial<PersistedFields> | undefined
         if (!p || !p.rememberApiKey) {

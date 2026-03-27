@@ -1,4 +1,6 @@
 import { useAppStore } from '@/store/useAppStore'
+import { AnalysisToolbar } from '@/components/analysis/AnalysisToolbar'
+import { RewriteDraftPanel } from '@/components/analysis/RewriteDraftPanel'
 import { RoleBanner } from '@/components/results/RoleBanner'
 import { MustHavesTable } from '@/components/results/MustHavesTable'
 import { ScoreDashboard } from '@/components/results/ScoreDashboard'
@@ -17,6 +19,7 @@ export function AnalysisResultsPanel() {
 
   return (
     <div className="mt-10 animate-fade-up space-y-5">
+      <AnalysisToolbar />
       <RoleBanner />
       <MustHavesTable />
       <ScoreDashboard />
@@ -29,6 +32,7 @@ export function AnalysisResultsPanel() {
         <SectionBreakdown />
       </div>
       <SuggestedReplacements />
+      <RewriteDraftPanel />
     </div>
   )
 }
