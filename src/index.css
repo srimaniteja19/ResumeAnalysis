@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Bungee&family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: 78 92% 90%;
+  --foreground: 0 0% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --primary: 142 71% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 54 96% 77%;
+  --secondary-foreground: 0 0% 4%;
+  --muted: 240 5% 35%;
+  --muted-foreground: 240 5% 30%;
+  --accent: 142 76% 87%;
+  --accent-foreground: 145 64% 18%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 4%;
+  --input: 0 0% 4%;
+  --ring: 108 100% 54%;
+  --radius: 0.9rem;
+}
+
+@layer utilities {
+  .text-voltage {
+    text-shadow:
+      0 0 1px rgba(57, 255, 20, 0.8),
+      2px 2px 0 #0a0a0a;
+  }
+}
+
+body {
+  margin: 0;
+  background: #ecfccb;
+  color: #0a0a0a;
+  font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+/* —— Plumber briefing room floor: hazard + slime + hex DNA print —— */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-color: #ecfccb;
+  background-image:
+    repeating-linear-gradient(
+      -36deg,
+      transparent,
+      transparent 14px,
+      rgb(10 10 10 / 0.04) 14px,
+      rgb(10 10 10 / 0.04) 28px
+    ),
+    radial-gradient(ellipse 120% 90% at 50% -20%, rgb(57 255 20 / 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 80% at 110% 80%, rgb(249 115 22 / 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgb(10 10 10 / 0.04) 1.5px, transparent 1.5px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    18px 18px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Slow rotating “alien signal” wash */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -40%;
+  width: 180%;
+  height: 180%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    rgb(57 255 20 / 0.07) 52deg,
+    transparent 100deg,
+    rgb(34 197 94 / 0.06) 160deg,
+    transparent 220deg,
+    rgb(249 115 22 / 0.05) 280deg,
+    transparent 360deg
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: alienSignal 22s linear infinite;
+}
+
+@keyframes alienSignal {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(360deg) scale(1.05);
+  }
+}
+
+/* CRT / lab monitor scanlines (very subtle) */
+#root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgb(0 0 0 / 0.025) 2px,
+    rgb(0 0 0 / 0.025) 4px
+  );
+  opacity: 0.35;
+}
+
+@keyframes loadBar {
+  0% {
+    width: 10%;
+    margin-left: 0;
+  }
+  50% {
+    width: 50%;
+  }
+  100% {
+    width: 10%;
+    margin-left: 90%;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #d9f99d;
+  border-left: 3px solid #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+  border: 3px solid #0a0a0a;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #39ff14;
+}
