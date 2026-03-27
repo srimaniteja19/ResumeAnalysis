@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store/useAppStore'
+import { MatchTransformationCallout } from '@/components/results/MatchTransformationCallout'
 
 export function RoleBanner() {
   const analysisResult = useAppStore((s) => s.analysisResult)
@@ -8,6 +9,7 @@ export function RoleBanner() {
 
   return (
     <section className="space-y-4">
+      <MatchTransformationCallout />
       <div className="flex flex-wrap gap-2">
         <span className="rounded-full border-2 border-border bg-pastel-lavender px-3 py-1 font-mono text-xs font-bold uppercase tracking-wide text-foreground shadow-comic-sm">
           Role · {roleTitle || '—'}
